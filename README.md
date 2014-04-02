@@ -3,10 +3,10 @@ ljson
 
 a lib for json convert lua.
 
-##`require`
+### require
 lpeg version 0.12
 
-##`API`
+### API
 ```
 function encode(lua_table);   
   -- convert lua_table to json string.
