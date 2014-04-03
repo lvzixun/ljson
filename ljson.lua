@@ -5,15 +5,20 @@ local tostring = tostring
 local type     = type
 local concat   = table.concat
 
-local R, P, C, Cp, S, V, Ct = lpeg.R, lpeg.P, lpeg.C, lpeg.Cp, lpeg.S, lpeg.V, lpeg.Ct
+local R, P, C, Cp, S, V, Ct, Cmt, Carg = 
+      lpeg.R, lpeg.P, lpeg.C, lpeg.Cp, lpeg.S, lpeg.V, lpeg.Ct, lpeg.Cmt, lpeg.Carg
 
-local cur_line = 1
-local I = Cp()
+local eof = P(-1)
+
 local space = S(" \r\t")
-local line =  P"\n" / 
-  function ()
-    cur_line = cur_line + 1
-  end
+local line = Cmt(P"\n"*Carg(1), 
+  function (_, pos, state)
+    local line = state.line
+    state.cur_line = line[pos] or state.cur_line + 1
+    line[pos] = state.cur_line
+    return true
+  end)
+
 local pass = (space + line)^0
 
 -----  number
@@ -38,21 +43,32 @@ local boolean = C(P"false" + P"true") /
   end
 
 -----  exception
-local exception = I*P(1) / 
-  function ()
-    error(("[@line: %d] invalid syntax."):format(cur_line))
+local exception = P(1)*Carg(1) / 
+  function (state)
+    error(("[@line: %d] invalid syntax."):format(state.cur_line))
   end
 
 -----  except
 local function E(s)
-  return P(s) + I*P(1) / 
-    function ()
-      error(("[@line: %d] \"%s\" is expected."):format(cur_line, s))
+  return P(s) + P(1)*Carg(1) / 
+    function (state)
+      error(("[@line: %d] \"%s\" is expected."):format(state.cur_line, s))
     end
 end
 
 local function _gen_entry(patt)
-  return (patt * (pass * P"," * pass * patt)^0) + P""
+  return (patt * (pass * P"," * pass * patt)^0) + P""/
+          function()
+            return nil
+          end
+end
+
+local function _gen_table(...)
+  local ret = {...}
+  if #ret == 0 and ret[1] == nil then
+    ret = {}
+  end
+  return ret
 end
 
 -------  syntax
@@ -60,15 +76,15 @@ local map, array, node, entry  = V"map", V"array", V"node", V"entry"
 local G = P{
   "trunk",
   trunk = map + array,
-  node  =  number + string + boolean + map + array + exception,
+  node  =  number + string + boolean + map + array,
   array = P"[" * pass *  _gen_entry(node)  * pass * E"]" / 
     function (...)
-      return {...}
+      return _gen_table(...)
     end,
   entry = string * pass * E":" * pass * node,
   map   = P"{" * pass *  _gen_entry(entry) * pass * E"}" / 
     function (...)
-        local t = {...}
+        local t = _gen_table(...)
         local ret = {}
         assert(#t%2 == 0)
         for i=1, #t, 2 do
@@ -79,12 +95,8 @@ local G = P{
         return ret
     end,
 }
-local G = pass * Ct(G) * pass
+local G = pass * G * pass * eof + exception
 
-
-local function reset()
-  cur_line = 1
-end
 
 local function _jtype(value)
   local t = type(value)
@@ -157,8 +169,7 @@ end
 local function decode(json)
   local success, ret = pcall(function ()
       assert(type(json) == "string")
-      reset()
-      return lpeg.match(G, json)
+      return lpeg.match(G, json, 1, {line = {}, pos = 0, cur_line = 1})
     end)
   return success, ret
 end
