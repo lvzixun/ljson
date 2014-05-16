@@ -42,6 +42,12 @@ local boolean = C(P"false" + P"true") /
     assert(false)
   end
 
+---- null
+local null = C(P"null") / 
+  function ()
+    return nil
+  end
+
 -----  exception
 local exception = P(1)*Carg(1) / 
   function (state)
@@ -76,7 +82,7 @@ local map, array, node, entry  = V"map", V"array", V"node", V"entry"
 local G = P{
   "trunk",
   trunk = map + array,
-  node  =  number + string + boolean + map + array,
+  node  =  number + string + boolean + null + map + array,
   array = P"[" * pass *  _gen_entry(node)  * pass * E"]" / 
     function (...)
       return _gen_table(...)
