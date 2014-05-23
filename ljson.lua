@@ -288,7 +288,7 @@ _2value = function (value, meta)
   if t == "number"  or t == "boolean" then
     return tostring(value)
   elseif t == "string" then
-    return "\""..utf82json_unicode(t).."\""
+    return "\""..utf82json_unicode(value).."\""
   elseif t == "table" then
     return _2table(value, meta)
   end

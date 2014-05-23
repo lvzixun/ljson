@@ -1,4 +1,7 @@
-local json = require "ljson"
+-- local json = require "ljson"
+local json = dofile("../ljson.lua")
+local util = dofile("../util.lua")
+
 
 local t = {
   a = 0xff1,
@@ -11,11 +14,14 @@ local t = {
   },
   f = false,
   g = true,
+  h = "中文123显示abc",
+  l = "\\aaaaa"
 }
 
 local j_str = [[
 {
   "name" : "",
+  "find" : "\u9996\u5145\u6709\u79ae",
   "sprite" : 
   [
     {
@@ -34,29 +40,6 @@ local j_str = [[
       "x mirror" : false,
       "x offset" : 0.0,
       "x scale" : 0.6000000238418579
-    },
-    {
-      "font" : "E",
-      "font_filename" : "",
-      "label_height" : 19,
-      "label_width" : 160,
-      "multi color" : "0xffffffff",
-      "name" : "title",
-      "position" : 
-      {
-        "x" : 9.703887939453125,
-        "y" : 1.0
-      },
-      "size" : 14,
-      "tag" : "",
-      "x mirror" : false,
-      "x offset" : 0.0,
-      "x scale" : 1.0,
-      "x shear" : 0.0,
-      "y mirror" : false,
-      "y offset" : 0.0,
-      "y scale" : 1.0,
-      "y shear" : 0.0
     }
   ]
 }
@@ -65,4 +48,6 @@ local j_str = [[
 
 
 print(json.encode(t))
-print(json.decode(j_str))
+print("-----------------")
+local success, data = json.decode(j_str)
+util.print_table(data)
