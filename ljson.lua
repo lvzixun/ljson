@@ -13,6 +13,7 @@ local tonumber = tonumber
 local tostring = tostring
 local type     = type
 local concat   = table.concat
+local select   = select
 
 local R, P, C, Cp, S, V, Ct, Cmt, Carg = 
       lpeg.R, lpeg.P, lpeg.C, lpeg.Cp, lpeg.S, lpeg.V, lpeg.Ct, lpeg.Cmt, lpeg.Carg
@@ -162,8 +163,9 @@ local G = P{
     function (...)
         local t = _gen_table(...)
         local ret = {}
-        assert(#t%2 == 0)
-        for i=1, #t, 2 do
+        local len = select("#", ...)
+        assert(len%2 == 0)
+        for i=1, len, 2 do
           local k = t[i]
           local v = t[i+1]
           ret[k] = v
